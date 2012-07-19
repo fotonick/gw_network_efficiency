@@ -57,7 +57,7 @@ static double horizon_distance(double m1, double m2, double f_low, double f_high
             S = XLALSimNoisePSDKAGRA;
             break;
         default:
-            fprintf(stderr, "This line should never be reached.\n");
+            fprintf(stderr, "Unknown detector '%c'.\n", detector);
             exit(EXIT_FAILURE);
     }
 
