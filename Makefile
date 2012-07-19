@@ -1,5 +1,6 @@
-.SECONDARY: network_efficiency.c
+network_efficiency: network_efficiency.o
+	gcc -fopenmp $(shell pkg-config --libs lal lalsimulation gsl) -o $@ $<
 
-network_efficiency: network_efficiency.c Makefile
-	gcc -g -fopenmp -O3 -ffast-math -mfpmath=387 $(shell pkg-config --cflags lal lalsimulation gsl) -o $@.o -c $<
-	gcc -fopenmp $(shell pkg-config --libs lal lalsimulation gsl) -o $@ $@.o
+%.o: %.c Makefile
+	gcc -fopenmp -std=c99 -O3 -ffast-math -mfpmath=387 $(shell pkg-config --cflags lal lalsimulation gsl) -o $@ -c $<
+
