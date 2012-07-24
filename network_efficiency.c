@@ -38,7 +38,7 @@ double rchisq_2(gsl_rng*, double);
 void Ssq(double*, gsl_rng*, double, double*, ssize_t);
 
 int main(int argc, char *argv[]) {
-  const double twopi = 2 * M_PI;
+  const static double twopi = 2 * M_PI;
   LALDetector network[LAL_NUM_DETECTORS];
   double Dhor[LAL_NUM_DETECTORS];
   double thresh_snr;
@@ -48,13 +48,13 @@ int main(int argc, char *argv[]) {
   double *Distances;
   size_t D_max;
   size_t D_steps;
-  
+
   /*Parse cmdline arguments*/
   if (argc != 7) {
     fprintf(stderr, "Usage: snr_thresh network Ntrials jet_semiangle_deg max_distance_Mpc distance_steps\n");
     exit(2);
   }
-  
+
   /*Initilize network and other cmdline arguments*/
   memset(network, 0, LAL_NUM_DETECTORS);
   thresh_snr = strtod(argv[1], NULL);
@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
   if (network_size == -1) exit(2);
   N = strtol(argv[3], NULL, 10);
   beam_fac = 1 - cos(strtod(argv[4], NULL) * M_PI / 180.);
-  
+
   /*Set up/initialize the distance parameters*/
   D_max=strtol(argv[5], NULL, 10);
   D_steps=strtol(argv[6], NULL, 10);
@@ -87,7 +87,6 @@ int main(int argc, char *argv[]) {
   /*Preallocate variables needed inside loops*/
   size_t j, k, l;
   double S2[network_size];
-  int successes;
   /*size_t objects are inherently the size of a pointer on the system.*/
   for (k=1; k<=N; k++) {
     /* draw orientations and determine network response */
@@ -97,17 +96,20 @@ int main(int argc, char *argv[]) {
 
     for (l = network_size; l--;)
       XLALComputeDetAMResponse(response + 2 * l, response + 2 * l + 1, network[l].response, lon, lat, zeta, 0.);
-    
+
     Ssq(S2, rng, beam_fac, response, network_size);
-    
+
     for(j=D_steps;j--;){
-      successes=0;
-      for(l=network_size;l--;)
-	successes+=rchisq_2(rng,(64-2)*(Dhor[l]/Distances[j])*(Dhor[l]/Distances[j])*S2[l])>64;
+      const double d = 1. + j * d_step;
+      int successes = 0;
+      for(l=network_size;l--;) {
+          const double lambda = (64-2)*(Dhor[l]/d)*(Dhor[l]/d)*S2[l];
+          successes += rchisq_2(rng, lambda) > 64;
+      }
       threadTotals[j]+=successes>=2;
     }
   }
-  
+
   printf("This is before the seg fault.\n");
   gsl_rng_free(rng);
   printf("This is after the seg fault.\n");
@@ -139,7 +141,7 @@ void Ssq(double *S2, gsl_rng *rng, double beam_fac, double *response, ssize_t ne
   const double cosiota=1-beam_fac*gsl_rng_uniform(rng);//beam_fac determines max iota.
   const double cosiotasq=cosiota*cosiota;
   const double iotafac=0.25*(1+cosiotasq)*(1+cosiotasq);
-  
+
   size_t l=network_size;
   for(;l--;)
     //double fplus=response[2*l], fcross=response[2*l+1];
@@ -147,7 +149,7 @@ void Ssq(double *S2, gsl_rng *rng, double beam_fac, double *response, ssize_t ne
 }
 
 /*
- * Convert string like "HLVK" to an array of LALDetectors. 
+ * Convert string like "HLVK" to an array of LALDetectors.
  * Return the size of the network.
  */
 ssize_t str2network(LALDetector network[LAL_NUM_DETECTORS], double reach[LAL_NUM_DETECTORS], char *str) {
@@ -180,8 +182,8 @@ ssize_t str2network(LALDetector network[LAL_NUM_DETECTORS], double reach[LAL_NUM
       frDetector->yArmAzimuthRadians = 5.789082595939991;
       detector = XLALCreateDetector(network + k, frDetector, LALDETECTORTYPE_IFODIFF);
       if (!detector) {
-	fprintf(stderr, "Failed to create KAGRA detector\n");
-	return -1;
+        fprintf(stderr, "Failed to create KAGRA detector\n");
+        return -1;
       }
       k++;
     }
@@ -200,8 +202,8 @@ ssize_t str2network(LALDetector network[LAL_NUM_DETECTORS], double reach[LAL_NUM
       frDetector->yArmAzimuthRadians = 5.497787143782138;
       detector = XLALCreateDetector(network + k, frDetector, LALDETECTORTYPE_IFODIFF);
       if (!detector) {
-	fprintf(stderr, "Failed to create Indigo detector\n");
-	return -1;
+        fprintf(stderr, "Failed to create Indigo detector\n");
+        return -1;
       }
       k++;
     }
