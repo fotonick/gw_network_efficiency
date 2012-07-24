@@ -34,7 +34,7 @@ int debug=1;
 
 ssize_t str2network(LALDetector[],double[],char*);
 static double horizon_distance(double, double, double, double, double, char);
-double rchisq_2(gsl_rng*, double);
+static double rchisq_2(gsl_rng*, double);
 void Ssq(double*, gsl_rng*, double, double*, ssize_t);
 
 int main(int argc, char *argv[]) {
@@ -123,7 +123,7 @@ int main(int argc, char *argv[]) {
 /////#///////#////#//##/////
 /////#/////#####//#///#/////
 
-double rchisq_2(gsl_rng *rng, double lambda) {
+static double rchisq_2(gsl_rng *rng, double lambda) {
   double a = sqrt(0.5 * lambda);
   const double temp = gsl_ran_gaussian(rng, 1.0) + a;
   const double temp2 = gsl_ran_gaussian(rng, 1.0) + a;
@@ -137,9 +137,10 @@ void Ssq(double *S2, gsl_rng *rng, double beam_fac, double *response, ssize_t ne
   const double iotafac=0.25*(1+cosiotasq)*(1+cosiotasq);
 
   size_t l=network_size;
-  for(;l--;)
-    //double fplus=response[2*l], fcross=response[2*l+1];
-    S2[l]=response[2*l]*response[2*l]*iotafac+response[2*l+1]*response[2*l+1]*cosiotasq; //S^2
+  for(;l--;) {
+    double fplus=response[2*l], fcross=response[2*l+1];
+    S2[l]=fplus * fplus * iotafac + fcross * fcross * cosiotasq; //S^2
+  }
 }
 
 /*
