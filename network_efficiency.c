@@ -24,6 +24,7 @@
 #include <string.h>
 #include <glob.h>
 #include <gsl/gsl_rng.h>
+#include <gsl/gsl_randist.h>
 #include <lal/DetResponse.h>
 #include <lal/LALSimNoise.h>
 #include <lal/LALConstants.h>
