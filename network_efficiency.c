@@ -45,7 +45,6 @@ int main(int argc, char *argv[]) {
   ssize_t network_size;
   double beam_fac=-1.;
   size_t N;
-  double *Distances;
   size_t D_max;
   size_t D_steps;
 
@@ -66,11 +65,7 @@ int main(int argc, char *argv[]) {
   /*Set up/initialize the distance parameters*/
   D_max=strtol(argv[5], NULL, 10);
   D_steps=strtol(argv[6], NULL, 10);
-  Distances=malloc(D_steps*sizeof(double));
   double d_step=(D_max-1)/(D_steps-1);
-  size_t d;
-  for (d=D_steps;d--;)
-    Distances[d]=1+d*d_step;
 
   /*Initialize final storage array of efficiency for each distance step*/
   double *efficiency = calloc(D_steps, sizeof(double));
@@ -117,7 +112,6 @@ int main(int argc, char *argv[]) {
   free(response);
   //END THREAD HERE
 
-  free(Distances);
   free(efficiency);
 
   return 0;
