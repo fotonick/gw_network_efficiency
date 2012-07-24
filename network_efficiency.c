@@ -35,7 +35,7 @@ int debug=1;
 ssize_t str2network(LALDetector[],double[],char*);
 static double horizon_distance(double, double, double, double, double, char);
 double rchisq_2(gsl_rng*, double);
-void Ssq(gsl_rng*, double, double*, double*, ssize_t);
+void Ssq(double*, gsl_rng*, double, double*, ssize_t);
 
 int main(int argc, char *argv[]) {
   const double twopi = 2 * M_PI;
@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
   
   /*Parse cmdline arguments*/
   if (argc != 7) {
-    fprintf(stderr, "Usage: snr_thresh network Ntrials jet_semiangle_deg max_distance distance_steps\n");
+    fprintf(stderr, "Usage: snr_thresh network Ntrials jet_semiangle_deg max_distance_Mpc distance_steps\n");
     exit(2);
   }
   
@@ -73,10 +73,7 @@ int main(int argc, char *argv[]) {
     Distances[d]=1+d*d_step;
 
   /*Initialize final storage array of efficiency for each distance step*/
-  double *efficiency;
-  efficiency=malloc((D_steps)*sizeof(double));
-  size_t i;
-  for(i=D_steps;i--;) efficiency[i]=0;
+  double *efficiency = calloc(D_steps, sizeof(double));
 
   //START THREAD HERE
   /*Create and seed random number generator*/
@@ -85,13 +82,10 @@ int main(int argc, char *argv[]) {
   double *response = malloc(2 * network_size * sizeof(double));
 
   /*Total detections for each distance step for the given thread.*/
-  long *threadTotals;
-  threadTotals=malloc((D_steps)*sizeof(long));
-  size_t j;
-  for(j=D_steps;j--;) threadTotals[i]=0;
-  
+  long *threadTotals = calloc(D_steps, sizeof(long));
+
   /*Preallocate variables needed inside loops*/
-  size_t k, l;
+  size_t j, k, l;
   double S2[network_size];
   int successes;
   /*size_t objects are inherently the size of a pointer on the system.*/
@@ -104,7 +98,7 @@ int main(int argc, char *argv[]) {
     for (l = network_size; l--;)
       XLALComputeDetAMResponse(response + 2 * l, response + 2 * l + 1, network[l].response, lon, lat, zeta, 0.);
     
-    Ssq(rng, beam_fac, response, S2, network_size);
+    Ssq(S2, rng, beam_fac, response, network_size);
     
     for(j=D_steps;j--;){
       successes=0;
@@ -133,16 +127,14 @@ int main(int argc, char *argv[]) {
 /////#///////#////#//##/////
 /////#/////#####//#///#/////
 
-double rchisq_2(gsl_rng *rng, double lambda){
-  double a=sqrt(lambda/2);
-  double ret=0.;
-  int i;
-  for (i=0; i<2; i++)
-    ret+=pow(gsl_ran_gaussian(rng,1.0)+a,2);
-  return ret;
+double rchisq_2(gsl_rng *rng, double lambda) {
+  double a = sqrt(0.5 * lambda);
+  const double temp = gsl_ran_gaussian(rng, 1.0) + a;
+  const double temp2 = gsl_ran_gaussian(rng, 1.0) + a;
+  return temp * temp + temp2 * temp2;
 }
 
-void Ssq(gsl_rng *rng, double beam_fac, double *response, double *S2, ssize_t network_size){
+void Ssq(double *S2, gsl_rng *rng, double beam_fac, double *response, ssize_t network_size){
   /* Calculates the antenna factor for each detector for a random source orientation*/
   const double cosiota=1-beam_fac*gsl_rng_uniform(rng);//beam_fac determines max iota.
   const double cosiotasq=cosiota*cosiota;
