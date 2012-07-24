@@ -20,7 +20,7 @@
 #include <omp.h>
 #include <math.h>
 #include <stdlib.h>
-//#include <stdio.h>
+#include <stdio.h>
 #include <string.h>
 #include <glob.h>
 #include <gsl/gsl_rng.h>
@@ -29,20 +29,12 @@
 #include <lal/LALConstants.h>
 #include <lal/LALDetectors.h>
 
-/*Temporary definitions to overcome compiler problems.*/
-#define M_PI 3.14159265358979323846/*It's pi!*/
-# define M_PI_2 1.57079632679489661923/*It's pi, over 2!*/
-typedef __ssize_t ssize_t;
-
-
-
 int debug=1;
 
 ssize_t str2network(LALDetector[],double[],char*);
 static double horizon_distance(double, double, double, double, double, char);
 double rchisq_2(gsl_rng*, double);
 void Ssq(gsl_rng*, double, double*, double*, ssize_t);
-
 
 int main(int argc, char *argv[]) {
   const double twopi = 2 * M_PI;
@@ -79,11 +71,13 @@ int main(int argc, char *argv[]) {
   for (d=D_steps;d--;)
     Distances[d]=1+d*d_step;
 
+  /*Initialize final storage array of efficiency for each distance step*/
   double *efficiency;
   efficiency=malloc((D_steps)*sizeof(double));
   size_t i;
   for(i=D_steps;i--;) efficiency[i]=0;
 
+  //START THREAD HERE
   /*Create and seed random number generator*/
   gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
   gsl_rng_set(rng, 0);
@@ -118,20 +112,15 @@ int main(int argc, char *argv[]) {
       threadTotals[j]+=successes>=2;
     }
   }
-  /*
-  for(i=0;i<100;i++)
-    threadTotals[i]/=N;
   
-  if(debug)
-    for(i=0;i<100;i++)
-      //printf("%3.6f Mpc: %3.6f\%\n",Distances[i],threadTotals[i]*100);  
-      //For reading in R
-      printf("%09.5f %09.5f\n",Distances[i],threadTotals[i]*100);
-  */
+  printf("This is before the seg fault.\n");
   gsl_rng_free(rng);
-  free(response);  
-  free(Distances);
+  printf("This is after the seg fault.\n");
   free(threadTotals);
+  free(response);
+  //END THREAD HERE
+
+  free(Distances);
   free(efficiency);
 
   return 0;
