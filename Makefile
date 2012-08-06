@@ -5,4 +5,5 @@ network_efficiency: network_efficiency.o
 	gcc -fopenmp -std=gnu99 -O3 -ffast-math -mfpmath=387 $(shell pkg-config --cflags lal lalsimulation gsl) -o $@ -c $<
 
 clean:
-	rm -f network_efficiency network_effiency.o
+	rm -f network_efficiency
+	rm -f network_efficiency.o
